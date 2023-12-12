@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Medically Underserved Populations in CA</title>
+    	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css"/>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.0/css/all.css">
+
+    <style>
+ 	html, body, #map { width: 100%; height: 100%; margin: 0; background: #fff; }
+
+
+
+     body {
+			margin: 0;
+			padding: 0;
+			background: white;
+			font-family: 'Titillium Web', sans-serif;
+			color: #3d3d3d;
+		}
+
+		h1 {
+			position: absolute;
+			margin-top: 10;
+			top: 15px;
+			left: 50px;
+			font-size: 2em;
+			font-family: 'Titillium Web', sans-serif;
+			letter-spacing: .04em;
+			padding: 10px 15px;
+			background: rgba(256, 256, 256);
+			border: 1px solid grey;
+			border-radius: 30px;
+			z-index: 800;
+		}
+
+		h2 {
+			font-family: 'Titillium Web', sans-serif;
+			letter-spacing: .04em;
+		}
+
+		#map {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 100%;
+		}
+
+		section {
+			position: absolute;
+			bottom: 0;
+			left: 10px;
+			width: 280px;
+			margin: 20px auto;
+			padding: 0 15px;
+			background: rgba(256, 256, 256);
+			border: 1px solid grey;
+			border-radius: 30px;
+			z-index: 800;
+		}
+
+		p {
+			font-size: .9em;
+			line-height: 1.5em;
+		}
+
+		a {
+			color: #005daa;
+			text-decoration: none;
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+
+
+.legend {
+    line-height: 40px;
+    font-size: 16px;
+    width: 190px;
+    color: #333333;
+    padding: 6px 8px;
+    background: white;
+    background: rgba(255,255,255,0.5);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+ 
+.legend i {
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.9;
+}
+ 
+.legend img {
+    width: 16px;
+    height: 16px;
+    margin-right: 3px;
+    float: left;
+}
+ 
+.legend p {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+}
+
+.legend {
+
+    font-family: 'Titillium Web', sans-serif;
+
+}
+
+    </style>
+    	<link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+	<script src="https://unpkg.com/leaflet@1.7.0/dist/leaflet.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.3.4/chroma.min.js"></script>
+
+</head>
+<body>
+
+
+
+    <h1>Medically Underserved Populations in California</h1>
+
+	<div id='map'></div>
+
+	<section>
+		<h2>Background Information</h2>
+
+		<p>There is a large lack of access to necessary medical resources in California, and a growing need to find areas with the most need. Although there are tons of hospitals scattered throughout the state, not everyone is able to recieve the help they need.</p>
+		<p>The legend shows the various for the medically underserved populations, varying from 41.8 to 67.2. The low scores represent the highest need, a score of 62.0 or less qualfies an area as "medically underserved". This map can be used to locate areas with the most need and least amount of medical facilities, so that incoming medical professionals can be dispersed where they are most needed.</p> 
+		</p>
+
+		<p><a href = "https://data.hrsa.gov/tools/shortage-area/mua-find">More Information Here!</a></p>
+
+		<p>Map authored by Lydia Nowak.</p>
+
+	</section>
+
+
+
+<!-- Our web map and content will go here -->
+<div id="map"></div>
+<script>
+ var mymap = L.map('map', {
+    center: [37.7783,-119.4179],
+    zoom: 6, 
+    maxZoom: 50,
+    minZoom: 1,
+    detectRetina: true 
+});
+ 
+// 2. Add a base map.
+L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png').addTo(mymap);
+
+
+
+// 3. Add Airbnb GeoJSON Data
+// Null variable that will hold county data
+var county = null;
+
+county = L.geoJson.ajax("data/county.geojson", {
+    style: {
+        fillColor: 'rgba(0, 0, 0, 0.5)', // Black color with 50% opacity for fill
+        fillOpacity: 0.1, // Adjust the opacity of the fill
+        color: 'black', // Black color for the outline
+        weight: 1 // Adjust the thickness of the outline
+    }
+});
+
+county.addTo(mymap);
+
+
+// 4. build up a set of colors from colorbrewer's dark2 category
+var colors = chroma.scale('Greens').mode('lch').colors(4);
+
+// 5. dynamically append style classes to this page. The style classes will be used to shade the markers.
+// We can use a for loop to do this.
+for (i = 0; i < 3; i++) {
+    $('head').append($("<style> .marker-color-" + (i + 1).toString() + " { color: " + colors[i] + "; font-size: 15px; text-shadow: 0 0 3px #ffffff;} </style>"));
+}
+
+
+var hospitals = null;
+
+hospitals = L.geoJson.ajax("data/hospitals.geojson",{
+
+
+// assign a function to the onEachFeature parameter of the hospital object.
+// Then each (point) feature will have a popup window.
+// The content of the popup window is the value of `facility_name` from the attribute table
+
+onEachFeature: function (feature, layer) {
+   layer.bindPopup(feature.properties.facility_name);
+ },
+
+//pointToLayer: function (feature, latlng) {
+//var id = 0; 
+ //return L.marker(latlng, {icon: L.divIcon({ 
+   // className: "fa-solid fa-hospital"
+
+    pointToLayer: function (feature, latlng) {
+   var id = 0; // You may want to set this based on some condition in your data
+   return L.marker(latlng, {icon: L.divIcon({ className: 'fa-solid fa-hospital'
+})});
+},
+
+
+  attribution: 'Healthcare Facilities; NIFC Authoritative Content &copy | Base Map &copy; CartoDB | Map Author: Lydia Nowak'
+});
+
+// Add the hospitals to the map.
+hospitals.addTo(mymap);
+
+var colorScale = chroma.scale('Greens');
+
+var colors = colorScale.colors(4);
+ 
+function setColor(MuaSCORE) {
+    var id = 0;
+   if (MuaSCORE > 60.86) { id = 3; } //133-27=106:
+   else if (MuaSCORE <= 60.85 && MuaSCORE > 54.6) { id = 2; } 
+   else if (MuaSCORE <= 54.5 && MuaSCORE > 48.16) { id = 1; }
+   else if (MuaSCORE <= 48.15 && MuaSCORE > 41.8) { id = 0; } 
+   //else if (MuaSCORE > 60.85 && MuaSCORE <= 54.6) { id = 2; } 
+   //else if (MuaSCORE > 54.5 && MuaSCORE <= 48.16) { id = 1; } 
+   //else if (MuaSCORE > 48.15 && MuaSCORE <= 41.8) { id = 0; } 
+   else  { id = 0; }
+    return colors[id];
+}
+
+
+function style(feature) {
+    return {
+        fillColor: setColor(feature.properties.MuaSCORE),
+        fillOpacity: 0.5,
+        weight: 2,
+        opacity: 1,
+        color: '#b4b4b4',
+        dashArray: '4'
+    };
+}
+
+//medical.eachLayer(function(layer) {
+  //  layer.bindPopup(layer.feature.properties.MuaSCORE);
+//});
+
+// 8. Add county polygons
+L.geoJson.ajax("data/medical.geojson", {
+    style: style
+}).addTo(mymap);
+
+// 9. Create Leaflet Control Object for Legend
+var legend = L.control({position: 'topright'});
+ 
+// 10. Function that runs when legend is added to map
+legend.onAdd = function () {
+ 
+    // Create Div Element and Populate it with HTML
+    var div = L.DomUtil.create('div', 'legend');
+    //this line creates a title for the choropleth part of the legend
+    div.innerHTML += '<b>Legend</b><br />';
+    div.innerHTML += '<b>Medical Access</b><br />';
+ 
+    //the colors specify the shade of purple that we used to do the polygon shading
+   // div.innerHTML += '<i style="background: ' + colors[4] + '; opacity: 0.5"></i><p>6+</p>';
+    div.innerHTML += '<i style="background: ' + colors[3] + '; opacity: 0.5"></i><p>60.86-67.2</p>';
+    div.innerHTML += '<i style="background: ' + colors[2] + '; opacity: 0.5"></i><p>54.6-60.85</p>';
+    div.innerHTML += '<i style="background: ' + colors[1] + '; opacity: 0.5"></i><p>48.16-54.5</p>';
+    div.innerHTML += '<i style="background: ' + colors[0] + '; opacity: 0.5"></i><p>41.8-48.15</p>';
+    //this line provides the legend title for the hospital symbols
+    div.innerHTML += '<hr><b>Medical Centers<b><br />';
+ 
+    div.innerHTML += '<i class= "fa-solid fa-hospital"></i><p>Hospitals</p>';
+ 
+    // Return the Legend div containing the HTML content
+    return div;
+};
+ 
+
+
+// 11. Add a legend to map
+legend.addTo(mymap);
+
+
+// 12. Add a scale bar to map
+L.control.scale({position: 'bottomleft'}).addTo(mymap);
+
+</script>
+</body>
+</html>
